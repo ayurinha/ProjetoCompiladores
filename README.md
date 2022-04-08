@@ -1,1 +1,1 @@
-# Diretorio referente as aulas 24 e a atividade 2 que adiciona a feature REPITA-ATE-FIMREPITA
+Projeto de um Compilador referente a disciplina Teoria das Linguagens e Compiladores, UNIFAL-MG.
