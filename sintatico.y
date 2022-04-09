@@ -143,15 +143,19 @@ indice
 
 posicao
     :   {
-            fprintf(yyout, "\tLEIA\n");
+            printf("Chegou no na posição ");
             int pos = desempilha();
-            fprintf(yyout, "\tARZG\t%d\n", TabSimb[pos].endereco);  /* (endereço da variavel na estrutura) */
+            int t = TabSimb[pos].tipo;
+            if (t != 'i') 
+                erro("Incompatibilidade de tipos");
+            empilha(pos);
+            //fprintf(yyout, "\tARZG\t%d\n", TabSimb[pos].endereco);  /* (endereço da variavel na estrutura) */
         }
     |   T_ABRE_COL expr
             {
                 int t = desempilha();
                 int p = desempilha();
-                if(t == 'l')
+                if(t != 'i')
                     erro("Tipo do indice deve ser inteiro");
                 if(TabSimb[p].categoria != 'a')
                     erro("A variavel nao é um vetor");
@@ -194,18 +198,19 @@ leitura
                 empilha(pos);
                 printf("Chegou no leia");
             }
-        colchetes {
-            printf("Chegou no colchetes");
-            int pos = desempilha();
-            fprintf(yyout, "\tARZV\t%d\n", TabSimb[pos].endereco);
-            }
+        colchetes 
     ;
 
 colchetes
     : {
+            printf("Chegou no colchetes ");
             fprintf(yyout, "\tLEIA\n");
             int pos = desempilha();
+            int t = TabSimb[pos].tipo;
+            if (t != 'i') 
+                erro("Incompatibilidade de tipos");
             fprintf(yyout, "\tARZG\t%d\n", TabSimb[pos].endereco);  
+            empilha(pos);
         }
     | T_ABRE_COL expr T_FECHA_COL
         {
@@ -214,6 +219,8 @@ colchetes
             if(t != 'i') 
                 erro("Incompatibilidade de tipos");
             fprintf(yyout, "\tLEIA\n"); 
+            fprintf(yyout, "\tARZV\t%d\n", TabSimb[pos].endereco);
+            empilha(pos);
         }
 ;
 escrita
@@ -222,24 +229,31 @@ escrita
     ;
 
 repeticao
-    :   T_ENQTO 
+    :  T_ENQTO 
             { 
-                rotulo++; /*  Cria um rotulo adicionando 1 a variavel  */
-                fprintf(yyout, "L%d\tNADA\n", rotulo);  /*  Marca UM lugar NO CODIGO com o VALOR do ROTULO CRIADO acima  */
-                empilha(rotulo);  /*  Empilha o valor do rotulo como um lugar a ser retornado futuramente  */
-            } /* %d (endereço da variavel na estrutura) */ //Marca o desvio Se Verdadeiro
+                printf("Chega no t-enquanto ");
+                rotulo++; //  Cria um rotulo adicionando 1 a variavel  
+                fprintf(yyout, "L%d\tNADA\n", rotulo);  //  Marca UM lugar NO CODIGO com o VALOR do ROTULO CRIADO acima  
+                empilha(rotulo);  //  Empilha o valor do rotulo como um lugar a ser retornado futuramente  /
+            } // %d (endereço da variavel na estrutura)  //Marca o desvio Se Verdadeiro
         expr T_FACA
             {
+                printf("Chega no t-faça ");
+                char t = desempilha();           // Desempilha o tipo do identificador /
+                    if (t != 'l')
+                        erro ("Incompatibilidade de tipos!");
                 rotulo++;
-                fprintf(yyout, "\tDSVF\tL%d\n", rotulo); /* Desvia se Falso */ 
+                fprintf(yyout, "\tDSVF\tL%d\n", rotulo); // Desvia se Falso / 
                 empilha(rotulo);
-            }  
+                printf("Sai do t-faça ");
+            }
         lista_comandos   T_FIMENQTO
             {
-                int r1 = desempilha(); /* Rotulo de Saida da Repeticao */
-                int r2 = desempilha(); /* Rotulo de Entrada da Repeticao */
-                fprintf(yyout, "\tDSVS\tL%d\n", r2);    /* Desvia se Verdadeiro */
-                fprintf(yyout, "L%d\tNADA\n", r1);      /* Marca desvio Se Falso */
+                printf("Chega no t-fimenquanto ");
+                int r1 = desempilha(); // Rotulo de Saida da Repeticao /
+                int r2 = desempilha(); // Rotulo de Entrada da Repeticao /
+                fprintf(yyout, "\tDSVS\tL%d\n", r2);    // Desvia se Verdadeiro /
+                fprintf(yyout, "L%d\tNADA\n", r1);      // Marca desvio Se Falso */
             }
     |   T_REPITA 
             {
@@ -286,6 +300,7 @@ selecao
 atribuicao
     :   T_IDENTIF
             {
+                printf("Chegou na atribuiçao 1 ");
                 int pos = busca_simbolo(atomo); 
                 if (pos == -1) 
                     erro("Variavel não declarada");
@@ -293,6 +308,7 @@ atribuicao
             }
         posicao T_ATRIB   expr
             {
+                printf("Chegou na atribuiçao 2 ");
                 int t = desempilha();
                 int pos = desempilha();
                 fprintf(yyout, "\tARZV\t%d\n", TabSimb[pos].endereco);  
@@ -329,6 +345,7 @@ expr
                 empilha('i');
                 fprintf(yyout, "\tSOMA\n");  
                 printf("saiu da expressao");
+                
             }
     |   expr    T_MENOS    expr
             {
