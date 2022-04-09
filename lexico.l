@@ -1,15 +1,10 @@
-/* |---------------------------------------------------
- * |            UNIFAL - Universidade Federal de Alfenas.
- * |              BACHARElADO EM CIENCIA DA COMPUTACAO.
- * | Trabalho..: Vetor e verificacao de tipos
- * | Disciplina: Teoria de Linguagens e Compiladores
- * | Professor.: Luiz Eduardo da Silva
- * | Aluno.....: Helbert Sousa Reis
- * | Matricula.: 2015.1.08.026
- * | Data......: 10/03/2022
- * |---------------------------------------------------*/
+/*      Teoria de Linguagens e Compiladores
 
-/*  GERAR CODIGOS NUMERICOS TOKENS NO ARQUIVO SINTATICO  */
+Maria Luiza Silva Marcelino - 2017.1.08.009
+Data - 24/03/2022
+
+*/
+
 %{
    #include "sintatico.h"
    void erro(char *s);
