@@ -531,7 +531,7 @@ Data - 24/03/2022
 #line 9 "lexico.l"
    #include "sintatico.h"
    void erro(char *s);
-   char atomo[100]; // Usado para guardar o nome de uma entidade
+   char atomo[100]; // Usado para guardar o nome de uma variavel
    int numLinha = 1; // Conta a linha para mostrar o local do erro
 #line 537 "lexico.c"
 /*  DESABILITAR EXIGENCIA DE CODIFICACAO YYWRAP*/
@@ -878,12 +878,12 @@ return T_FIMENQTO;
 case 13:
 YY_RULE_SETUP
 #line 43 "lexico.l"
-return T_REPITA;        /*  Atividade Implementação do Analisador Sintatico  */
+return T_REPITA;        
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
 #line 44 "lexico.l"
-return T_ATE;           /*  Adiciona a possibilidade de utilizar os comandos REPITA-ATE-FIMREPITA  -  Atividade prática 2  */
+return T_ATE;           
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
@@ -958,12 +958,12 @@ return T_FECHA;
 case 29:
 YY_RULE_SETUP
 #line 63 "lexico.l"
-return T_ABRE_COL;      /*    SIMBOLO DE INSTRUCAO DE LIMITE DE VETOR */
+return T_ABREC;      /*    SIMBOLO DE INSTRUCAO DE LIMITE DE VETOR */
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
 #line 64 "lexico.l"
-return T_FECHA_COL;     /*    SIMBOLO DE INSTRUCAO DE LIMITE DE VETOR */
+return T_FECHAC;     /*    SIMBOLO DE INSTRUCAO DE LIMITE DE VETOR */
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
@@ -993,12 +993,12 @@ YY_RULE_SETUP
 case 36:
 YY_RULE_SETUP
 #line 75 "lexico.l"
-{ strcpy(atomo, yytext); return T_NUMERO; }   /* Guardar valor da variavel*/ /*"["{numero}"]"   {  strcpy(atomo, yytext); return T_INDICE;} */
+{ strcpy(atomo, yytext); return T_NUMERO; }   /* Guardar valor da variavel*/
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
 #line 76 "lexico.l"
-;                 /* nao faz nada */
+/* nao faz nada */
 	YY_BREAK
 case 38:
 /* rule 38 can match eol */
@@ -1030,7 +1030,7 @@ case 43:
 /* rule 43 can match eol */
 YY_RULE_SETUP
 #line 82 "lexico.l"
-numLinha++;
+;{ numLinha++; }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
@@ -2059,8 +2059,3 @@ void yyfree (void * ptr )
    return 0;
 } */
 
-/*TODO: 
- * [] - Criar o formato de um vetor
- * [] - Criar o indice de um vetor
- * [] - Fazer o indice poder ser uma expressao
- */

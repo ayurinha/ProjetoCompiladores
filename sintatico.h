@@ -80,8 +80,8 @@ extern int yydebug;
     T_FECHA = 286,
     T_INTEIRO = 287,
     T_LOGICO = 288,
-    T_ABRE_COL = 289,
-    T_FECHA_COL = 290,
+    T_ABREC = 289,
+    T_FECHAC = 290,
     T_REPITA = 291,
     T_ATE = 292,
     T_FIMREPITA = 293

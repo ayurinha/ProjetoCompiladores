@@ -9,23 +9,24 @@ Data - 24/03/2022
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "lexico.c"  //Incluir o programa todo.
-#include "estrut.c"  //Incluir o programa todo. /* Exemplo de Link Edit: extern char atomo[100]; */
+#include "lexico.c"  
+#include "estrut.c"  
 
 
 void erro(char *);
 int yyerror(char *);
-int conta = 0;          /* Contar número de variaveis           */
-int rotulo = 0;         /* Marcar locais dentro do código       */
-char tipo;              /* Insere um tipo para o identificador  */
-char cat;            //MODIFIED: /* Insere uma categoria a variavel      TODO:MODIFICAR PARA VET[4] PRO TIPO PEDIDO   */
+int conta = 0;          
+int rotulo = 0;         
+char tipo;              
+char cat;            
+int endereco;
 int auxIndex;
 %}
 
-%start programa  /*  SIMBOLO INICIAL - SIMBOLO DE PARTIDA  */
+%start programa  
 
-
-%token T_PROGRAMA /*  SIMBOLOS TERMINAIS - TOKENS  */
+/*  TOKENS  */
+%token T_PROGRAMA 
 %token T_INICIO
 %token T_FIM
 %token T_IDENTIF
@@ -56,32 +57,32 @@ int auxIndex;
 %token T_FECHA
 %token T_INTEIRO
 %token T_LOGICO
-%token T_ABRE_COL
-%token T_FECHA_COL
+%token T_ABREC
+%token T_FECHAC
 
-%token T_REPITA  /*  Atividade Implementação do Analisador Sintatico  */
-%token T_ATE     /*  Adiciona a possibilidade de utilizar os comandos REPITA-ATE-FIMREPITA  -  Atividade prática 2  */
+%token T_REPITA  // Atividade prática 1
+%token T_ATE     //Atividade prática 2
 %token T_FIMREPITA
 
 
-%left T_E       T_OU  /*  DEFINICAO DE PRECEDENCIA - EVITAR CONFLITO DE ERRO DE DESLOCAMENTO  */
+%left T_E       T_OU  
 %left T_IGUAL   
 %left T_MAIOR   T_MENOR
 %left T_MAIS    T_MENOS
-%left T_VEZES   T_DIV  /*  REGRAS SÃO LIDAS - TEM SEU VALOR DE PRIORIDADE - DE BAIXO PRA CIMA  */ 
-
+%left T_VEZES   T_DIV  
+%left T_ABRE    T_ABREC
 /*  GRAMATICA DE CONTEXTO  */
 %%
 programa
-    :   cabecalho variaveis /*  Estrutura Geral de um programa.  */
+    :   cabecalho variaveis 
             { 
                 mostra_tabela(); 
-                fprintf(yyout, "\tAMEN\t%d\n", conta);  
+                fprintf(yyout, "\tAMEM\t%d\n", conta);  
                 empilha(conta); 
-            }   /*  Cada variavel que for declarada gerará um AMEN */ 
+            }    
         T_INICIO lista_comandos T_FIM                     
             { 
-                fprintf(yyout, "\tDMEN\t%d\n", desempilha());  
+                fprintf(yyout, "\tDMEM\t%d\n", desempilha());  
                 fprintf(yyout, "\tFIMP\n");  
             }
     ;
@@ -96,6 +97,55 @@ variaveis
     |   declaracao_variaveis
     ;
 
+variavel 
+    :   T_IDENTIF {strcpy(elem_tab.id, atomo);}     //preenche a tabela com o nome encontrado
+            tamanho      
+    ; 
+
+lista_variaveis
+    :   lista_variaveis variavel 
+            {
+                elem_tab.endereco = conta;
+                elem_tab.tipo = tipo;
+                if (!auxIndex)
+                    {
+                        elem_tab.categoria = 'v';    
+                        elem_tab.tamanho = 1;
+                        conta++;
+                    }
+                else 
+                    {
+                        elem_tab.categoria = 'a';    
+                        elem_tab.tamanho = auxIndex;
+                        conta = conta + auxIndex;
+                    }
+                insere_simbolo(elem_tab);       
+            } 
+    |   variavel 
+            {
+                elem_tab.endereco = conta;    
+                elem_tab.tipo = tipo;
+                if (!auxIndex)
+                    {             
+                        elem_tab.categoria = 'v';    
+                        elem_tab.tamanho = 1;
+                        conta++;
+                    }
+                else 
+                    {   
+                        
+                        elem_tab.categoria = 'a';    
+                        elem_tab.tamanho = auxIndex;
+                        conta = conta + auxIndex;
+                    }
+                insere_simbolo(elem_tab);       
+            }
+    ;
+
+tamanho 
+    : { auxIndex = 0; }  
+    | T_ABREC T_NUMERO T_FECHAC { auxIndex = atoi(atomo); }  
+    ;
 declaracao_variaveis
     :   tipo    lista_variaveis    declaracao_variaveis
     |   tipo    lista_variaveis
@@ -104,44 +154,6 @@ declaracao_variaveis
 tipo
     :   T_INTEIRO   { tipo = 'i';}
     |   T_LOGICO    { tipo = 'l';}
-    ;
-variavel
-    :   T_IDENTIF { strcpy(elem_tab.id, atomo); }     /* Preenchendo elemento da tabela com o nome encontrado */
-            tamanho        
-    ; 
-
-tamanho
-    :   {
-            int pos = atoi(atomo);//TODO: cadastrar variavel simples DONE:
-            elem_tab.categoria = 'v';     /* v = indica que é uma variavel   */
-            elem_tab.endereco = conta;    /* Incrementa conta quando encontrar variaveis          */
-            conta++;
-            elem_tab.tamanho = 1;
-            
-        }
-    |   T_ABRE_COL T_NUMERO 
-            {
-                /*TODO:cadastrar vetor*/
-                int count = atoi(atomo);
-                elem_tab.categoria = 'a';       /* a = indica que é um array   */
-                elem_tab.endereco = conta;   /* Incrementa conta quando encontrar variaveis          */
-                conta += count; 
-                elem_tab.tamanho = count;
-                elem_tab.tipo = tipo;
-                
-            } T_FECHA_COL
-    ;
-lista_variaveis
-    :   lista_variaveis variavel
-            {
-                elem_tab.tipo = tipo;
-                insere_simbolo(elem_tab);       /* Inserir o simbolo na tabela de simbolos              */
-            }
-    |   variavel
-            {
-                elem_tab.tipo = tipo;
-                insere_simbolo(elem_tab);       /* Inserir o simbolo na tabela de simbolos              */
-            }
     ;
 
 lista_comandos
@@ -160,30 +172,33 @@ comando
 leitura
     :   T_LEIA    T_IDENTIF
             { 
-                //fprintf(yyout, "\tLEIA\n");
-                int pos = busca_simbolo(atomo); /* Busca o nome na tabela de Simbolo associado ao T_IDENTIF guardado na variavel 'atomo' */
+                int pos = busca_simbolo(atomo);
                 if (pos == -1) erro("Variavel não declarada");
                 empilha(pos);
-                //fprintf(yyout, "\tARZG\t%d\n", TabSimb[pos].endereco);  /* (endereço da variavel na estrutura) */
+                //fprintf(yyout, "\tARZG\t%d\n", TabSimb[pos].endereco); // acho que nao é aqui  
             } 
-            posicao
+            colchetes {
+
+            }
     ;
-posicao
-    : {
-        int pos = desempilha();
-        fprintf(yyout, "\tLEIA\n"); 
-        fprintf(yyout, "\tARZG\t%d\n", TabSimb[pos].endereco); 
-    }
-    | T_ABRE_COL expr T_FECHA_COL
+colchetes
+   :   {
+       fprintf(yyout, "\tLEIA\n");
+       int pos = desempilha();
+       fprintf(yyout, "\tARZG\t%d\n", TabSimb[pos].endereco); //endereço de variavel sem ser vetor
+   }
+    | T_ABREC expr T_FECHAC
         {
+            fprintf(yyout, "\tLEIA\n");
             char t = desempilha();
             if(t != 'i')
-                erro("Incompatibilidade de tipos");
+                erro("Incompatibilidade de tipos"); //verifica se o vetor é inteiro
             int pos = desempilha();
-            fprintf(yyout, "\tLEIA\n"); 
-            fprintf(yyout, "\tARZV\t%d\n", TabSimb[pos].endereco);     
+            fprintf(yyout, "\tARZV\t%d\n", TabSimb[pos].endereco);    //endereço de variavel vetor
         }
     ;
+
+
 escrita
     :   T_ESCREVA expr
             { 
@@ -195,46 +210,46 @@ escrita
 repeticao
     :   T_ENQTO 
             { 
-                rotulo++; /*  Cria um rotulo adicionando 1 a variavel  */
-                fprintf(yyout, "L%d\tNADA\n", rotulo);  /*  Marca UM lugar NO CODIGO com o VALOR do ROTULO CRIADO acima  */
-                empilha(rotulo);  /*  Empilha o valor do rotulo como um lugar a ser retornado futuramente  */
-            } /* %d (endereço da variavel na estrutura) */ //Marca o desvio Se Verdadeiro
+                rotulo++; //cria rotulo AQUI
+                fprintf(yyout, "L%d\tNADA\n", rotulo);  
+                empilha(rotulo);  
+            } 
         expr T_FACA
             {
-                char t = desempilha();           /* Desempilha o tipo do identificador */
+                char t = desempilha();           
                     if (t != 'l')
                         erro("Incompatibilidade de tipos!");
                 rotulo++;
-                fprintf(yyout, "\tDSVF\tL%d\n", rotulo); /* Desvia se Falso */ 
+                fprintf(yyout, "\tDSVF\tL%d\n", rotulo); //desvia se falso
                 empilha(rotulo);
             }  
         lista_comandos   T_FIMENQTO
             {
-                int r1 = desempilha(); /* Rotulo de Saida da Repeticao */
-                int r2 = desempilha(); /* Rotulo de Entrada da Repeticao */
-                fprintf(yyout, "\tDSVS\tL%d\n", r2);    /* Desvia se Verdadeiro */
+                int r1 = desempilha(); 
+                int r2 = desempilha(); 
+                fprintf(yyout, "\tDSVS\tL%d\n", r2);    //desvia se verdadeiro
                 fprintf(yyout, "L%d\tNADA\n", r1);  
             }
-    |   T_REPITA lista_comandos T_ATE expr      T_FIMREPITA /* Atividade 2 - REPITA-ATE-FIMREPITA */
+    |   T_REPITA lista_comandos T_ATE expr      T_FIMREPITA 
     ;
 
 selecao
     :   T_SE    expr    T_ENTAO 
             {
-                char t = desempilha();           /* Desempilha o tipo do identificador */
+                char t = desempilha();           
                     if (t != 'l')
                         erro ("Incompatibilidade de tipos!");
                 rotulo++; 
                 fprintf(yyout, "\tDSVF\tL%d\n", rotulo);  
-                empilha(rotulo); /*  Rotulo do SENAO  */
+                empilha(rotulo); //rotulo do senao
             }
         lista_comandos T_SENAO 
             {
-                int r = desempilha(rotulo);                 /* Guarda rotulo do SENAO FALSO*/
-                rotulo++;                                   /* Cria rotulo do Desvia Sempre */
-                fprintf(yyout, "\tDSVS\tL%d\n", rotulo);    /* Marca com Rotulo Desvia Sempre */
-                empilha(rotulo);                            /*  Empilha lugar do Desvia Sempre */
-                fprintf(yyout, "L%d\tNADA\n", r);  }        /* Usa rotulo SenaoFalso para marcar lugar no codigo */ 
+                int r = desempilha(rotulo);                 //guarda rotulo do senao falto
+                rotulo++;                                   
+                fprintf(yyout, "\tDSVS\tL%d\n", rotulo);    
+                empilha(rotulo);                            
+                fprintf(yyout, "L%d\tNADA\n", r);  }        
         lista_comandos T_FIMSE
             {
                 int r = desempilha();
@@ -245,159 +260,160 @@ selecao
 atribuicao
     :   T_IDENTIF
     {
-        int pos = busca_simbolo(atomo); /* Busca o nome na tabela de Simbolo associado ao T_IDENTIF guardado na variavel 'atomo' */
-        if (pos == -1) erro("Variavel não declarada");
-        if (TabSimb[pos].tipo != 'i') erro ("Incompatibilidade de tipos");
-        fprintf(yyout, "\tARZG\t%d\n", TabSimb[pos].endereco);
-        empilha(pos);
+        int pos = busca_simbolo(atomo); 
+        if (pos == -1) 
+            erro("Variavel não declarada");
+        if (TabSimb[pos].tipo != 'i') 
+            erro ("Incompatibilidade de tipos");
+        endereco = TabSimb[pos].endereco; //guardo o endereço do variavel pra usar ali no final depois
 
     } T_ATRIB expr
             {
-                char t = desempilha();
-                int p = desempilha();
-                printf("%d - t, %d - ? \n", t, p);
-                //fprintf(yyout, "\tARZG\t%d\n", TabSimb[p].endereco);
+                char t = desempilha(); //desempilha um tipo que vem a expr
+                if(t != 'i')
+                    erro("Só se pode atribuir valores inteiros");
+                fprintf(yyout, "\tARZG\t%d\n", endereco); //gera arzg com o endereço da variavel normal
             }
     |   T_IDENTIF
     {
-        int pos = busca_simbolo(atomo); /* Busca o nome na tabela de Simbolo associado ao T_IDENTIF guardado na variavel 'atomo' */
-        if (pos == -1) erro("Variavel não declarada");
-        if (TabSimb[pos].tipo != 'i') erro ("Incompatibilidade de tipos");
-        empilha(pos);
+        int pos = busca_simbolo(atomo); 
+        if (pos == -1) 
+            erro("Variavel não declarada");
+        if (TabSimb[pos].tipo != 'i') 
+            erro ("Só se pode atribuir valores inteiros");
+        endereco = TabSimb[pos].endereco; //guardo o endereço do variavel pra usar ali no final depois
 
-    } T_ABRE_COL expr T_FECHA_COL 
+    } T_ABREC expr T_FECHAC 
     {
-        int t = desempilha();
-        if(t != 'i') erro("Incompatibilidade de tipos");
+        int t = desempilha(); //desempilha um tipo que vem a expr
+        if(t != 'i') 
+            erro("Incompatibilidade de tipos");
     }
     T_ATRIB expr
     {
-        int t = desempilha();
-        int pos = desempilha();
-        fprintf(yyout, "\tARZV\t%d\n", TabSimb[pos].endereco);
+        int t = desempilha(); //desempilha um tipo que vem a expr
+        if(t != 'i') 
+            erro("Incompatibilidade de tipos");
+        fprintf(yyout, "\tARZV\t%d\n", endereco); //gera arzv com o endereço da variavel vetor
     }
     ;
 
 indice
-    : {
-        int pos = desempilha();
-        fprintf(yyout, "\tCRVG\t%d\n", TabSimb[pos].endereco); 
-        int t = TabSimb[pos].tipo;
-        empilha(pos);
-        empilha(t);
-    }
-    | T_ABRE_COL expr T_FECHA_COL
+    : 
+    | T_ABREC expr T_FECHAC
         {
-            char t = desempilha();
+            char t = desempilha(); //desempilha o tipo e ve se é inteiro
             if(t != 'i')
                 erro("Incompatibilidade de tipos");
-            int pos = desempilha();
-            fprintf(yyout, "\tCRVV\t%d\n", TabSimb[pos].endereco);
-            empilha(pos);
-            empilha(t); 
         }
     ;
 
 expr  
     :   expr    T_VEZES    expr  /*  CALCULOS ARITMETICOS  */
             {
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'i' || t2 != 'i')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();            
+                char t2 = desempilha();            
+                if (t1 != 'i' || t2 != 'i')         
                     erro ("Incompatibilidade de tipos!");
                 empilha('i');
                 fprintf(yyout, "\tMULT\n");
             }
     |   expr    T_DIV      expr
             {   
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'i' || t2 != 'i')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();            
+                char t2 = desempilha();             
+                if (t1 != 'i' || t2 != 'i')         
                     erro ("Incompatibilidade de tipos!");
                 empilha('i');
                 fprintf(yyout, "\tDIVI\n");  
             }
     |   expr    T_MAIS     expr
             { 
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'i' || t2 != 'i')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();            
+                char t2 = desempilha();           
+                if (t1 != 'i' || t2 != 'i')        
                     erro ("Incompatibilidade de tipos!");
                 empilha('i');
                 fprintf(yyout, "\tSOMA\n");  
             }
     |   expr    T_MENOS    expr
             {
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'i' || t2 != 'i')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();             
+                char t2 = desempilha();             
+                if (t1 != 'i' || t2 != 'i')        
                     erro ("Incompatibilidade de tipos!");
                 empilha('i');
                 fprintf(yyout, "\tSUBT\n");  
             }
     |   expr    T_MAIOR    expr  /*  CALCULOS RELACIONAIS  */
             { 
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'i' || t2 != 'i')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();             
+                char t2 = desempilha();             
+                if (t1 != 'i' || t2 != 'i')         
                     erro ("Incompatibilidade de tipos!");
                 empilha('l');
                 fprintf(yyout, "\tCMMA\n");  
             }
     |   expr    T_MENOR    expr
             {
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'i' || t2 != 'i')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();             
+                char t2 = desempilha();            
+                if (t1 != 'i' || t2 != 'i')        
                     erro ("Incompatibilidade de tipos!");
                 empilha('l');
                 fprintf(yyout, "\tCMME\n");  
             }
     |   expr    T_IGUAL    expr
             { 
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'i' || t2 != 'i')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();             
+                char t2 = desempilha();             
+                if (t1 != 'i' || t2 != 'i')         
                     erro ("Incompatibilidade de tipos!");
                 empilha('l');
                 fprintf(yyout, "\tCMIG\n");  
             }
     |   expr    T_E        expr  /*  CALCULOS LOGICOS      */
             {
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'l' || t2 != 'l')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();             
+                char t2 = desempilha();             
+                if (t1 != 'l' || t2 != 'l')         
                     erro ("Incompatibilidade de tipos!");
                 empilha('l');
                 fprintf(yyout, "\tCONJ\n");  
             }
     |   expr    T_OU       expr
             {
-                char t1 = desempilha();             /* Desempilha o tipo do primeiro identificador      */
-                char t2 = desempilha();             /* Desempilha o tipo do segundo identificador      */
-                if (t1 != 'l' || t2 != 'l')         /* Se tipos não puderem ser equacionados            */
+                char t1 = desempilha();             
+                char t2 = desempilha();             
+                if (t1 != 'l' || t2 != 'l')         
                     erro ("Incompatibilidade de tipos!");
                 empilha('l');
                 fprintf(yyout, "\tDISJ\n");  
             }
-    |   termo  /*  TERMO : não possui estrura expr-operador-expr    */
+    |   termo  //se vai pra termo se nao achar
     ;
 
 termo
-    :   T_IDENTIF
+    :   T_IDENTIF //talvez o indice fique aqui 
             {
-                
-                int pos = busca_simbolo(atomo); /* Busca o nome na tabela de Simbolo associado ao T_IDENTIF guardado na variavel 'atomo' */
+                int pos = busca_simbolo(atomo);
                 if (pos == -1) 
                     erro("Variavel não declarada");
+                empilha(TabSimb[pos].tipo);
                 empilha(pos);
 
-            } indice
+            } indice { //depois de fazer a verificaçao de tipos no indice vem pra ca pra gerar crvg ou crvv
+                int pos = desempilha();
+                if (TabSimb[pos].categoria == 'v') 
+                    fprintf(yyout, "\tCRVG\t%d\n", TabSimb[pos].endereco); //gera crvg se é variavel
+                if (TabSimb[pos].categoria == 'a') 
+                    fprintf(yyout, "\tCRVV\t%d\n", TabSimb[pos].endereco); // gera crvv se é vetor
+            } 
     |   T_NUMERO
             { 
                 empilha('i');
                 fprintf(yyout, "\tCRCT\t%s\n", atomo);  
-            } /* Literal que representa a variavel */
+            } 
     |   T_V
             { 
                 empilha('l');
@@ -422,7 +438,8 @@ termo
 %%
 
 void erro (char *s){
-    printf("ERRO na linha %d: %s\n", numLinha, s);
+    printf("ERRO linha %d: %s\n", numLinha, s);
+    exit(10);
 }
 
 int yyerror (char *s){
@@ -444,7 +461,7 @@ int yyerror (char *s){
     strcpy(nameIn, argv[0]); // Nome do programa sem extensão adicionado como nome do arquivo de entrada
     strcat(nameIn, ".simples"); // Adiciona a extensão simples
     strcpy(nameOut, argv[0]); // Nome do programa sem extensão adicionado como nome do arquivo de saida
-    strcat(nameOut, ".mvs"); // AAdiciona a extensão mvs da Maquina Simples
+    strcat(nameOut, ".mvs"); // Adiciona a extensão mvs da Maquina Simples
 
     yyin = fopen(nameIn, "rt");
     if(!yyin){
